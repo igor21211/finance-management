@@ -11,15 +11,20 @@ import {
 import { Select } from '@/components/select';
 import { transactionsInsertSchema } from '@/db/schema';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/date-picker';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Trash } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import AmountInput from '@/components/amount-input';
+import { convertAmountToMiliUnits } from '@/lib/utils';
 const formSchema = z.object({
   date: z.coerce.date(),
   accountId: z.string(),
   categoryId: z.string().nullable().optional(),
   payee: z.string(),
-  amount: z.number(),
+  amount: z.string(),
   notes: z.string().nullable().optional(),
 });
 
@@ -59,8 +64,9 @@ export const TransactionForm = ({
   });
 
   const handleSubmit = (values: FormValues) => {
-    console.log(values);
-    //onSubmit(values);
+    const amount = parseFloat(values.amount);
+    const amountInMiliUnits = convertAmountToMiliUnits(amount);
+    onSubmit({ ...values, amount: amountInMiliUnits });
   };
 
   const handleDelete = () => {
@@ -73,6 +79,21 @@ export const TransactionForm = ({
         onSubmit={form.handleSubmit(handleSubmit)}
         className="space-y-4 pt-4"
       >
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <DatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={disabled}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="accountId"
@@ -91,7 +112,7 @@ export const TransactionForm = ({
             </FormItem>
           )}
         />
-         <FormField
+        <FormField
           control={form.control}
           name="categoryId"
           render={({ field }) => (
@@ -109,7 +130,55 @@ export const TransactionForm = ({
             </FormItem>
           )}
         />
-
+        <FormField
+          control={form.control}
+          name="payee"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Payee</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Enter a payee"
+                  disabled={disabled}
+                  {...field}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          name="amount"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Amount</FormLabel>
+              <FormControl>
+                <AmountInput
+                  {...field}
+                  disabled={disabled}
+                  placeholder="0.00"
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  value={field.value ?? ''}
+                  placeholder="Enter a notes"
+                  disabled={disabled}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
 
         <Button className="w-full" type="submit" disabled={disabled}>
           {id ? 'Update' : 'Create'}

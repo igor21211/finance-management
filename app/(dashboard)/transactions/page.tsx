@@ -10,13 +10,13 @@ import { Plus, Loader2 } from 'lucide-react';
 import { columns } from './columns';
 import { DataTable } from '@/components/data-table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useBulkDelete } from '@/features/accounts/api/use-bulk-delete-accounts';
 import { useGetTransactions } from '@/features/transactions/api/use-get-transactions';
 import { useNewTransaction } from '@/features/transactions/hooks/use-new-transaction';
+import { useBulkDeleteTransactions } from '@/features/transactions/api/use-bulk-delete-transactions';
 const TransactionsPage = () => {
   const newTransaction = useNewTransaction();
   const transactions = useGetTransactions();
-  const bulkDeleteTransactions = useBulkDelete();
+  const bulkDeleteTransactions = useBulkDeleteTransactions();
   const data = transactions.data?.transactions || [];
 
   const isDisabled =
