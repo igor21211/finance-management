@@ -5,7 +5,9 @@ import { toast } from 'sonner';
 type Request = InferRequestType<
   typeof client.api.transactions.$post
 >['json'];
-type Response = InferResponseType<typeof client.api.transactions.$post>;
+type Response = InferResponseType<
+  typeof client.api.transactions.$post
+>;
 
 export const useCreateTransaction = () => {
   const queryClient = useQueryClient();
@@ -20,6 +22,7 @@ export const useCreateTransaction = () => {
     onSuccess: () => {
       toast.success('Transaction created successfully');
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
     },
     onError: (error) => {
       console.error(error);

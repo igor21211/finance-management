@@ -14,16 +14,17 @@ export const useBulkCreateTransactions = () => {
 
   return useMutation<Response, Error, Request>({
     mutationFn: async (json) => {
-      const response = await client.api.transactions['bulk-create'].$post(
-        {
-          json,
-        }
-      );
+      const response = await client.api.transactions[
+        'bulk-create'
+      ].$post({
+        json,
+      });
       return response.json();
     },
     onSuccess: () => {
       toast.success('Transactions created successfully');
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
     },
     onError: (error) => {
       console.error(error);

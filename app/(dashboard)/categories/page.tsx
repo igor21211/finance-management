@@ -13,7 +13,9 @@ import { useGetCategories } from '@/features/categories/api/use-get-categories';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBulkDeleteCategories } from '@/features/categories/api/use-bulk-delete-categories';
 import { useNewCategory } from '@/features/categories/hooks/use-new-category';
-const CategoriesPage = () => {
+import { Suspense } from 'react';
+
+const CategoriesPageContent = () => {
   const newCategory = useNewCategory();
   const categories = useGetCategories();
   const bulkDeleteCategories = useBulkDeleteCategories();
@@ -65,6 +67,14 @@ const CategoriesPage = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+const CategoriesPage = () => {
+  return (
+    <Suspense>
+      <CategoriesPageContent />
+    </Suspense>
   );
 };
 

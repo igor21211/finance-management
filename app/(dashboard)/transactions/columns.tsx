@@ -10,6 +10,8 @@ import { Actions } from './actions';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { AccountColumn } from './account-column';
+import { CategoryColumn } from './category-column';
 export type ResponseType = InferResponseType<
   typeof client.api.transactions.$get,
   200
@@ -78,7 +80,13 @@ export const columns: ColumnDef<ResponseType>[] = [
     },
     cell: ({ row }) => {
       const category = row.original.category;
-      return <span>{category}</span>;
+      return (
+        <CategoryColumn
+          id={row.original.id}
+          category={category}
+          categoryId={row.original.categoryId}
+        />
+      );
     },
   },
   {
@@ -123,8 +131,33 @@ export const columns: ColumnDef<ResponseType>[] = [
           variant={amount > 0 ? 'primary' : 'destructive'}
           className="text-sx font-medium px-3.5 py-2.5"
         >
-          {formatCurrency(amount)}
+          {formatCurrency(amount, true)}
         </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: 'account',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() =>
+            column.toggleSorting(column.getIsSorted() === 'asc')
+          }
+        >
+          Account
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const account = row.original.account;
+      return (
+        <AccountColumn
+          account={account}
+          accountId={row.original.accountId}
+        />
       );
     },
   },

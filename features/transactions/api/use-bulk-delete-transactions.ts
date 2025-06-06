@@ -14,16 +14,17 @@ export const useBulkDeleteTransactions = () => {
 
   return useMutation<Response, Error, Request>({
     mutationFn: async (json) => {
-      const response = await client.api.transactions['bulk-delete'].$post(
-        {
-          json,
-        }
-      );
+      const response = await client.api.transactions[
+        'bulk-delete'
+      ].$post({
+        json,
+      });
       return response.json();
     },
     onSuccess: () => {
       toast.success('Transactions deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
     },
     onError: (error) => {
       console.error(error);

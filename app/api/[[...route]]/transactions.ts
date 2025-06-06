@@ -7,16 +7,7 @@ import {
   accounts,
 } from '@/db/schema';
 import { clerkMiddleware, getAuth } from '@hono/clerk-auth';
-import {
-  and,
-  eq,
-  gte,
-  inArray,
-  lte,
-  desc,
-  notInArray,
-  sql,
-} from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, desc, sql } from 'drizzle-orm';
 import { parse, subDays } from 'date-fns';
 import { zValidator } from '@hono/zod-validator';
 import { createId } from '@paralleldrive/cuid2';
@@ -148,7 +139,10 @@ const app = new Hono()
   .post(
     '/bulk-create',
     clerkMiddleware(),
-    zValidator('json', z.array(transactionsInsertSchema.omit({ id: true }))),
+    zValidator(
+      'json',
+      z.array(transactionsInsertSchema.omit({ id: true }))
+    ),
     async (c) => {
       const auth = getAuth(c);
       if (!auth) {
@@ -182,35 +176,37 @@ const app = new Hono()
         return c.json({ error: 'Unauthorized' }, 401);
       }
       const { ids } = c.req.valid('json');
-      const transactionsToDelete = db
-        .$with('transactions_to_delete')
-        .as(
-          db
-            .select({ id: transactionsTable.id })
-            .from(transactionsTable)
-            .innerJoin(
-              accounts,
-              eq(transactionsTable.accountId, accounts.id)
-            )
-            .where(
-              and(
-                inArray(transactionsTable.id, ids),
-                eq(accounts.userId, auth.userId!)
-              )
-            )
-        );
 
-      await db
-        .with(transactionsToDelete)
-        .delete(transactionsTable)
+      // First find the transactions that belong to the user
+      const userTransactions = await db
+        .select({ id: transactionsTable.id })
+        .from(transactionsTable)
+        .innerJoin(
+          accounts,
+          eq(transactionsTable.accountId, accounts.id)
+        )
         .where(
-          notInArray(
-            transactionsTable.id,
-            sql`(select id from ${transactionsToDelete})`
+          and(
+            inArray(transactionsTable.id, ids),
+            eq(accounts.userId, auth.userId!)
           )
         );
 
-      return c.json({ message: 'Transactions deleted' });
+      if (userTransactions.length === 0) {
+        return c.json({ error: 'No transactions found' }, 404);
+      }
+
+      // Then delete them
+      const userTransactionIds = userTransactions.map((t) => t.id);
+      const deletedTransactions = await db
+        .delete(transactionsTable)
+        .where(inArray(transactionsTable.id, userTransactionIds))
+        .returning();
+
+      return c.json({
+        message: 'Transactions deleted',
+        count: deletedTransactions.length,
+      });
     }
   )
   .patch(
@@ -252,7 +248,7 @@ const app = new Hono()
         .update(transactionsTable)
         .set(values)
         .where(
-          notInArray(
+          inArray(
             transactionsTable.id,
             sql`(select id from ${transactionsToUpdate})`
           )
@@ -280,38 +276,32 @@ const app = new Hono()
         return c.json({ error: 'Id is required' }, 400);
       }
 
-      const transactionsToDelete = db
-        .$with('transactions_to_delete')
-        .as(
-          db
-            .select({ id: transactionsTable.id })
-            .from(transactionsTable)
-            .innerJoin(
-              accounts,
-              eq(transactionsTable.accountId, accounts.id)
-            )
-            .where(
-              and(
-                eq(transactionsTable.id, id),
-                eq(accounts.userId, auth.userId!)
-              )
-            )
-        );
-      const [transaction] = await db
-        .with(transactionsToDelete)
-        .delete(transactionsTable)
-        .where(
-          notInArray(
-            transactionsTable.id,
-            sql`(select id from ${transactionsToDelete})`
-          )
+      // First find if the transaction belongs to the user
+      const userTransaction = await db
+        .select({ id: transactionsTable.id })
+        .from(transactionsTable)
+        .innerJoin(
+          accounts,
+          eq(transactionsTable.accountId, accounts.id)
         )
-        .returning();
+        .where(
+          and(
+            eq(transactionsTable.id, id),
+            eq(accounts.userId, auth.userId!)
+          )
+        );
 
-      if (!transaction) {
+      if (!userTransaction.length) {
         return c.json({ error: 'Transaction not found' }, 404);
       }
-      return c.json({ transaction });
+
+      // Then delete it
+      const [deletedTransaction] = await db
+        .delete(transactionsTable)
+        .where(eq(transactionsTable.id, id))
+        .returning();
+
+      return c.json({ transaction: deletedTransaction });
     }
   );
 

@@ -13,7 +13,9 @@ import { DataTable } from '@/components/data-table';
 import { useGetAccounts } from '@/features/accounts/api/use-get-accounts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBulkDelete } from '@/features/accounts/api/use-bulk-delete-accounts';
-const AccountsPage = () => {
+import { Suspense } from 'react';
+
+const AccountsPageContent = () => {
   const newAccount = useNewAccount();
   const accounts = useGetAccounts();
   const bulkDeleteAccounts = useBulkDelete();
@@ -65,6 +67,14 @@ const AccountsPage = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+const AccountsPage = () => {
+  return (
+    <Suspense>
+      <AccountsPageContent />
+    </Suspense>
   );
 };
 
