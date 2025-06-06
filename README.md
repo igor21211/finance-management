@@ -2,6 +2,8 @@
 
 A modern web application for personal finance management built with Next.js 14 and TypeScript. This application helps users track their expenses, manage accounts, and categorize transactions.
 
+🌐 **[Live Demo](https://finance-management-lake.vercel.app/)**
+
 ## Features
 
 - 💳 **Account Management**
